@@ -43,30 +43,25 @@ class _MyHomePageState extends State<MyHomePage> {
   testDB() async {
     final db = await getDb();
     String query = '''
-          SELECT u.name, t.title as tag, ut.rank FROM users u
-          LEFT JOIN user_tags ut ON u.id = ut.user_id
-          LEFT JOIN tags t on ut.tag_id = t.id
-          ORDER BY rank DESC
+           SELECT u.* FROM users u LEFT JOIN user_tags ut ON u.id = ut.user_id WHERE ut.tag_id in (3) ORDER BY ut.rank DESC LIMIT 30 OFFSET 0
         ''';
     print('runnin raw query');
     final now = DateTime.now();
-    await db.rawQuery(query);
+    final result = await db.rawQuery(query);
+    print(result);
     print(
-      'finished runnin raw query in ${DateTime.now().difference(now).inMilliseconds}ms',
+      'finished runnin raw query on ${Platform.isAndroid ? 'Android' : 'iOS'} in ${DateTime.now().difference(now).inMilliseconds}ms',
     );
   }
 
   Future<Database> getDb() async {
     var databasesPath = await getDatabasesPath();
     var path = databasesPath + '/db.sqlite';
-    var exists = await databaseExists(path);
-    if (!exists) {
-      ByteData data = await rootBundle.load('assets/db.sqlite');
-      List<int> bytes =
-          data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-      await Directory(databasesPath).create(recursive: true);
-      await File(path).writeAsBytes(bytes, flush: true);
-    }
+    ByteData data = await rootBundle.load('assets/db.sqlite');
+    List<int> bytes =
+        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+    await Directory(databasesPath).create(recursive: true);
+    await File(path).writeAsBytes(bytes, flush: true);
     return await openDatabase(path);
   }
 
