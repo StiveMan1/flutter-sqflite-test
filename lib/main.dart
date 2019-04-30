@@ -42,13 +42,20 @@ class _MyHomePageState extends State<MyHomePage> {
 
   testDB() async {
     final db = await getDb();
-    String query = '''
-           SELECT u.* FROM users u LEFT JOIN user_tags ut ON u.id = ut.user_id WHERE ut.tag_id in (3) ORDER BY ut.rank DESC LIMIT 30 OFFSET 0
-        ''';
+    // String query = '''
+    //        SELECT u.* FROM users u LEFT JOIN user_tags ut ON u.id = ut.user_id WHERE ut.tag_id in (3) ORDER BY ut.rank DESC LIMIT 30 OFFSET 0
+    //     ''';
     print('runnin raw query');
     final now = DateTime.now();
+    var batch = db.batch()
+      ..execute('DROP VIEW IF EXISTS user_tag_view')
+      ..execute(
+          'CREATE VIEW user_tag_view AS SELECT u.*, ut.rank as rank, ut.tag_id as tag_id FROM users u, user_tags ut WHERE u.id = ut.user_id ORDER BY ut.rank DESC');
+    await batch.commit();
+    final query =
+        'SELECT u.id, u.name, u.rank FROM user_tag_view u WHERE u.tag_id in (3) LIMIT 30 OFFSET 0';
     final result = await db.rawQuery(query);
-    print(result);
+    // print(result);
     print(
       'finished runnin raw query on ${Platform.isAndroid ? 'Android' : 'iOS'} in ${DateTime.now().difference(now).inMilliseconds}ms',
     );
